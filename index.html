@@ -2,25 +2,33 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Wasm Proton PoC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wasm Proton - Universal PoC</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="game-canvas"></canvas>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="virtual-pad" class="mobile-only">
+            <button id="btn-up" class="pad-btn">↑</button>
+            <div class="pad-row">
+                <button id="btn-left" class="pad-btn">←</button>
+                <button id="btn-right" class="pad-btn">→</button>
+            </div>
+            <button id="btn-down" class="pad-btn">↓</button>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('game-canvas');
         
-        // 1. 画面のコントロール権限を完全に剥ぎ取る（OffscreenCanvas化）
+        // 1. 画面コントロール権限の剥ぎ取り
         const offscreenCanvas = canvas.transferControlToOffscreen();
-
-        // 2. 心臓部となるGame Workerを起動
         const worker = new Worker('game-worker.js');
-
-        // 3. WorkerにCanvasを送りつける（これ以降、メインは描画不可に）
         worker.postMessage({ type: 'INIT', canvas: offscreenCanvas }, [offscreenCanvas]);
 
-        // 4. キーボード入力を1ナノ秒でも早くWorkerに横流しする（プロキシ化）
+        // --- 【PC対応】キーボード入力プロキシ ---
         window.addEventListener('keydown', (e) => {
             worker.postMessage({ type: 'KEY_DOWN', key: e.key });
         });
@@ -28,7 +36,30 @@
             worker.postMessage({ type: 'KEY_UP', key: e.key });
         });
 
-        console.log("メインスレッド: 私は奴隷になりました。イベント転送に専念します。");
+        // --- 【モバイル対応】タッチ入力プロキシ ---
+        // スマホのボタンが押されたら、対応するキーボードの矢印キーに偽装してWorkerに送る
+        const bindMobileButton = (id, keyName) => {
+            const btn = document.getElementById(id);
+            
+            // タッチ開始（指が触れた）
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // スマホ特有のダブルタップズーム等を防止
+                worker.postMessage({ type: 'KEY_DOWN', key: keyName });
+            }, { passive: false });
+
+            // タッチ終了（指が離れた）
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                worker.postMessage({ type: 'KEY_UP', key: keyName });
+            }, { passive: false });
+        };
+
+        bindMobileButton('btn-up', 'ArrowUp');
+        bindMobileButton('btn-down', 'ArrowDown');
+        bindMobileButton('btn-left', 'ArrowLeft');
+        bindMobileButton('btn-right', 'ArrowRight');
+
+        console.log("メインスレッド: PC/モバイルの両方からイベントを搾取し、Workerへ流す体制が整いました。");
     </script>
 </body>
 </html>
