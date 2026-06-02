@@ -1,13 +1,88 @@
+* {
+    box-sizing: border-box;
+    /* スマホで長押ししたときのテキスト選択や青いハイライトを無効化 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 body {
     margin: 0;
-    background-color: #000;
+    padding: 0;
+    background-color: #0b0b0b;
+    color: #fff;
+    font-family: monospace;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    width: 100vw;
     overflow: hidden;
 }
+
+#game-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* ゲーム画面のサイズ自動調整（アスペクト比4:3を維持） */
 canvas {
-    background-color: #1e1e1e;
-    box-shadow: 0 0 20px rgba(0,255,0,0.2);
+    max-width: 100%;
+    max-height: 80vh;
+    aspect-ratio: 4 / 3;
+    background-color: #1a1a1a;
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.15);
+}
+
+/* --- バーチャルパッド（スマホ用レイアウト） --- */
+#virtual-pad {
+    position: absolute;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    z-index: 10;
+}
+
+.pad-row {
+    display: flex;
+    gap: 40px; /* 左右ボタンの間隔を開けて押しやすく */
+}
+
+.pad-btn {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    transition: background 0.1s;
+}
+
+/* ボタンを押したときの視覚フィードバック */
+.pad-btn:active {
+    background: rgba(0, 255, 0, 0.4);
+    border-color: #00ff00;
+}
+
+/* PC（マウス環境）ではバーチャルパッドを非表示にする */
+@media (pointer: fine) {
+    .mobile-only {
+        display: none !important;
+    }
+    canvas {
+        max-height: 90vh; /* PCならもう少し大きく表示 */
+    }
 }
