@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Wasm Proton PoC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="game-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        
+        // 1. 画面のコントロール権限を完全に剥ぎ取る（OffscreenCanvas化）
+        const offscreenCanvas = canvas.transferControlToOffscreen();
+
+        // 2. 心臓部となるGame Workerを起動
+        const worker = new Worker('game-worker.js');
+
+        // 3. WorkerにCanvasを送りつける（これ以降、メインは描画不可に）
+        worker.postMessage({ type: 'INIT', canvas: offscreenCanvas }, [offscreenCanvas]);
+
+        // 4. キーボード入力を1ナノ秒でも早くWorkerに横流しする（プロキシ化）
+        window.addEventListener('keydown', (e) => {
+            worker.postMessage({ type: 'KEY_DOWN', key: e.key });
+        });
+        window.addEventListener('keyup', (e) => {
+            worker.postMessage({ type: 'KEY_UP', key: e.key });
+        });
+
+        console.log("メインスレッド: 私は奴隷になりました。イベント転送に専念します。");
+    </script>
+</body>
+</html>
